@@ -1,6 +1,7 @@
-package com.android.practice.sockettestingapp
+package com.android.practice.sockettestingapp.handlers
 
 import android.util.Log
+import com.android.practice.sockettestingapp.data.SocketEvents
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
@@ -54,7 +55,7 @@ class SocketHandler {
     }
 
     @Synchronized
-    fun establishSocket() {
+    fun connectSocket() {
         mSocket.connect()
     }
 

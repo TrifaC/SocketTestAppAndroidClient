@@ -1,4 +1,4 @@
-package com.android.practice.sockettestingapp
+package com.android.practice.sockettestingapp.util
 
 object Constants {
     val URI_STRING_LOCAL: String = "http://10.0.2.2:3000"
