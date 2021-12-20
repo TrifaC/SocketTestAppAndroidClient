@@ -5,6 +5,7 @@ import com.android.practice.sockettestingapp.data.SocketEvents
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
+import org.json.JSONObject
 import java.net.URISyntaxException
 
 class SocketHandler {
@@ -13,26 +14,35 @@ class SocketHandler {
         const val LOG_TAG = "SocketHandler"
     }
 
-    lateinit var  mSocket: Socket
-    private lateinit var connectEmitListener: Emitter.Listener
-    private lateinit var disconnectEmitListener: Emitter.Listener
-    private lateinit var errorConnectEmitListener: Emitter.Listener
-    private lateinit var onChatEmitListener: Emitter.Listener
+    private lateinit var  mSocket: Socket
+
+    lateinit var connectEmitListener: Emitter.Listener
+    lateinit var disconnectEmitListener: Emitter.Listener
+    lateinit var errorConnectEmitListener: Emitter.Listener
+    lateinit var onChatEmitListener: Emitter.Listener
 
 
-//------------------------------------- Initialization ---------------------------------------------
+//------------------------------------- Emit Listener ----------------------------------------------
 
 
-    private fun initEmitterListener(socket: Socket) {
-        connectEmitListener = Emitter.Listener { Log.d(LOG_TAG, "Emit Listener: Connected." ) }
-        disconnectEmitListener = Emitter.Listener { Log.d(LOG_TAG, "Emit Listener: Disconnected.") }
-        errorConnectEmitListener = Emitter.Listener { Log.d(LOG_TAG, "Emit Listener: Connect Error.") }
-        onChatEmitListener = Emitter.Listener { args -> Log.d(LOG_TAG, "The message is ${args[0]}") }
+    /**
+     * Binding all socket emitters.
+     * */
+    fun bindSocketEmitter() {
+        mSocket.on(Socket.EVENT_CONNECT, connectEmitListener)
+        mSocket.on(Socket.EVENT_DISCONNECT, disconnectEmitListener)
+        mSocket.on(Socket.EVENT_CONNECT_ERROR, errorConnectEmitListener)
+        mSocket.on(SocketEvents.ON_CHAT.eventStr, onChatEmitListener)
+    }
 
-        socket.on(Socket.EVENT_CONNECT, connectEmitListener)
-        socket.on(Socket.EVENT_DISCONNECT, disconnectEmitListener)
-        socket.on(Socket.EVENT_CONNECT_ERROR, errorConnectEmitListener)
-        socket.on(SocketEvents.ON_CHAT.eventStr, onChatEmitListener)
+    /**
+     * Unbinding all socket emitters.
+     * */
+    fun unBindSocketEmitter() {
+        mSocket.off(Socket.EVENT_CONNECT, connectEmitListener)
+        mSocket.off(Socket.EVENT_DISCONNECT, disconnectEmitListener)
+        mSocket.off(Socket.EVENT_CONNECT_ERROR, errorConnectEmitListener)
+        mSocket.off(SocketEvents.ON_CHAT.eventStr, onChatEmitListener)
     }
 
 
@@ -43,7 +53,6 @@ class SocketHandler {
     fun setSocket(uriString: String) {
         try {
             mSocket = IO.socket(uriString)
-            initEmitterListener(mSocket)
         } catch (error: URISyntaxException) {
             Log.d(LOG_TAG, "Cannot connect to socket.")
         }
@@ -62,17 +71,20 @@ class SocketHandler {
     @Synchronized
     fun disconnectSocket() {
         mSocket.disconnect()
-        mSocket.off(Socket.EVENT_CONNECT, connectEmitListener)
-        mSocket.off(Socket.EVENT_DISCONNECT, disconnectEmitListener)
-        mSocket.off(Socket.EVENT_CONNECT_ERROR, errorConnectEmitListener)
     }
 
 
 //------------------------------------- Message Handler --------------------------------------------
 
 
-    fun sendMessage(events: SocketEvents, message: String) {
-        mSocket.emit(events.eventStr, message)
+    fun sendMessage(message: String) {
+        mSocket.emit(SocketEvents.ON_CHAT.eventStr, message)
     }
+
+    fun register(nameStr: String, gradeStr: String) {
+        val jsonObject = JSONObject("""{"name": "$nameStr", "grade": "$gradeStr"}""")
+        mSocket.emit(SocketEvents.REGISTER.eventStr, jsonObject)
+    }
+
 
 }
