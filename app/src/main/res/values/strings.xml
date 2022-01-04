@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">SocketTestingApp</string>
-    <string name="send_message_btn_label">Send Message</string>
+    <string name="send_message_btn_label">Send</string>
 </resources>

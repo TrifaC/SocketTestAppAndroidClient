@@ -2,11 +2,13 @@ package com.android.practice.sockettestingapp.view
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.android.practice.sockettestingapp.R
 import com.android.practice.sockettestingapp.data.SocketConnectStatus
+import com.android.practice.sockettestingapp.data.SocketEvents
 import com.android.practice.sockettestingapp.databinding.ActivityMainBinding
 
 
@@ -39,26 +41,33 @@ class MainActivity : AppCompatActivity() {
         binding.lifecycleOwner = this
 
         // Disable the button when the state is Init.
-        binding.disconnectButton.isEnabled = false
-        binding.sendButton.isEnabled = false
+        binding.disconnectBTN.isEnabled = false
+        binding.sendBTN.isEnabled = false
     }
 
     private fun initClickListener() {
-        binding.sendButton.setOnClickListener {
+        binding.sendBTN.setOnClickListener {
             val message: String = binding.messageET.text.toString().trim()
-            mainViewModel.sendMessage(message)
+            mainViewModel.sendMessage(SocketEvents.ON_CHAT, message)
             binding.messageET.setText("")
         }
-        binding.connectButton.setOnClickListener {
+        binding.connectBTN.setOnClickListener {
             val name: String = binding.nameET.text.toString().trim()
             val grade: String = binding.gradeET.text.toString().trim()
-            mainViewModel.connectSocket(name, grade)
+            val ipAddress: String = binding.ipET.text.toString().trim()
+            mainViewModel.connectSocket(ipAddress, name, grade)
+            binding.ipET.setText("")
             binding.nameET.setText("")
             binding.gradeET.setText("")
-
         }
-        binding.disconnectButton.setOnClickListener {
+        binding.disconnectBTN.setOnClickListener {
             mainViewModel.disconnectSocket()
+        }
+        binding.startBTN.setOnClickListener {
+            mainViewModel.startSection()
+        }
+        binding.pushUpBTN.setOnClickListener {
+            mainViewModel.doSport()
         }
     }
 
@@ -77,21 +86,27 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun enableBtnsInConnect() {
-        binding.sendButton.isEnabled = true
-        binding.disconnectButton.isEnabled = true
+        binding.sendBTN.isEnabled = true
+        binding.disconnectBTN.isEnabled = true
         binding.messageET.isEnabled = true
-        binding.connectButton.isEnabled = false
+        binding.startBTN.isEnabled = true
+        binding.pushUpBTN.isEnabled = true
+        binding.connectBTN.isEnabled = false
         binding.nameET.isEnabled = false
         binding.gradeET.isEnabled = false
+        binding.ipET.isEnabled = false
     }
 
     private fun enableBtnsInDisconnectAndError() {
-        binding.sendButton.isEnabled = false
-        binding.disconnectButton.isEnabled = false
+        binding.sendBTN.isEnabled = false
+        binding.disconnectBTN.isEnabled = false
         binding.messageET.isEnabled = false
-        binding.connectButton.isEnabled = true
+        binding.startBTN.isEnabled = false
+        binding.pushUpBTN.isEnabled = false
+        binding.connectBTN.isEnabled = true
         binding.nameET.isEnabled = true
         binding.gradeET.isEnabled = true
+        binding.ipET.isEnabled = true
 
     }
 

@@ -7,8 +7,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.android.practice.sockettestingapp.data.SocketConnectStatus
+import com.android.practice.sockettestingapp.data.SocketEvents
 import com.android.practice.sockettestingapp.handlers.SocketHandler
-import com.android.practice.sockettestingapp.util.Constants
 import io.socket.emitter.Emitter
 
 class MainActivityVM(application: Application) : AndroidViewModel(application) {
@@ -23,6 +23,7 @@ class MainActivityVM(application: Application) : AndroidViewModel(application) {
     private var messageList: ArrayList<String> = ArrayList<String>()
     private var name: String = ""
     private var grade: String = ""
+    private var pushUpCount: Int = 0
 
     private val _stateSocket = MutableLiveData<SocketConnectStatus>()
     val stateSocket: LiveData<SocketConnectStatus>
@@ -36,22 +37,34 @@ class MainActivityVM(application: Application) : AndroidViewModel(application) {
 //------------------------------------- Emitter Listener Function ----------------------------------
 
 
+    /**
+     * Method Executes after connecting to socket.
+     * */
     private fun connectedCallbackEvent() = Emitter.Listener {
         Log.d(LOG_TAG, "Connect to socket.")
         _stateSocket.postValue(SocketConnectStatus.CONNECTED)
         register(name, grade)
     }
 
+    /**
+     * Method Executes after disconnecting to socket.
+     * */
     private fun disconnectCallbackEvent() = Emitter.Listener {
         Log.d(LOG_TAG, "Disconnect to socket.")
         _stateSocket.postValue(SocketConnectStatus.DISCONNECTED)
     }
 
+    /**
+     * Method Executes after error happens in socket connection.
+     * */
     private fun errorConnectCallbackEvent() = Emitter.Listener {
         Log.d(LOG_TAG, "Connect Error")
         _stateSocket.postValue(SocketConnectStatus.ERROR)
     }
 
+    /**
+     * Method Executes after receiving on chat event.
+     * */
     private fun onChatCallbackEvent(message: String) {
         updateReceiveMessage(message)
     }
@@ -63,7 +76,6 @@ class MainActivityVM(application: Application) : AndroidViewModel(application) {
     init {
         initState()
         initMessageList()
-        initSocket()
     }
 
     /** Initialize the socket state. */
@@ -76,24 +88,23 @@ class MainActivityVM(application: Application) : AndroidViewModel(application) {
         _message.value = ""
     }
 
-    private fun initSocket() {
-        // Init Socket.
-        mSocketHandler = SocketHandler()
-        mSocketHandler.setSocket(Constants.URI_STRING_LOCAL)
-        // Init Socket Emitter Listener.
-        mSocketHandler.connectEmitListener = connectedCallbackEvent()
-        mSocketHandler.disconnectEmitListener = disconnectCallbackEvent()
-        mSocketHandler.errorConnectEmitListener = errorConnectCallbackEvent()
-        mSocketHandler.onChatEmitListener = Emitter.Listener { args -> onChatCallbackEvent(args[0].toString()) }
-        // Bind listener.
-        mSocketHandler.bindSocketEmitter()
-    }
-
 
 //------------------------------------- Event Trigger Functions ------------------------------------
 
 
-    fun connectSocket(name: String, grade: String) {
+    fun connectSocket(ipAddress: String, name: String, grade: String) {
+        // Init Socket.
+        mSocketHandler = SocketHandler()
+        mSocketHandler.setSocket(ipAddress)
+        // Init Socket Emitter Listener.
+        mSocketHandler.connectEmitListener = connectedCallbackEvent()
+        mSocketHandler.disconnectEmitListener = disconnectCallbackEvent()
+        mSocketHandler.errorConnectEmitListener = errorConnectCallbackEvent()
+        mSocketHandler.onChatEmitListener =
+            Emitter.Listener { args -> onChatCallbackEvent(args[0].toString()) }
+        // Bind listener.
+        mSocketHandler.bindSocketEmitter()
+        // Connect to socket.
         mSocketHandler.connectSocket()
         this.name = name
         this.grade = grade
@@ -107,18 +118,27 @@ class MainActivityVM(application: Application) : AndroidViewModel(application) {
 
     private fun register(nameStr: String, gradeStr: String) {
         if (TextUtils.isEmpty(nameStr) || TextUtils.isEmpty(gradeStr)) {
-            mSocketHandler.register("Default Name", "Default Grade")
+            mSocketHandler.sendRegisterEvent("Default Name", "Default Grade")
         } else {
-            mSocketHandler.register(nameStr, gradeStr)
+            mSocketHandler.sendRegisterEvent(nameStr, gradeStr)
         }
     }
 
-    fun sendMessage(message: String) {
-        if (TextUtils.isEmpty(message)) {
-            mSocketHandler.sendMessage("Send Empty")
+    fun sendMessage(event: SocketEvents, message: String) {
+        if (TextUtils.isEmpty(message) && event == SocketEvents.ON_CHAT) {
+            mSocketHandler.sendChatEvent(event, "Send Empty")
         } else {
-            mSocketHandler.sendMessage(message)
+            mSocketHandler.sendChatEvent(event, message)
         }
+    }
+
+    fun startSection() {
+        mSocketHandler.sendStartEvent()
+    }
+
+    fun doSport() {
+        pushUpCount += 1
+        mSocketHandler.sendPushUpEvent(pushUpCount)
     }
 
 
@@ -146,5 +166,6 @@ class MainActivityVM(application: Application) : AndroidViewModel(application) {
         }
         _message.postValue(messageTmp)
     }
+
 
 }
